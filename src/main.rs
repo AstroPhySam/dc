@@ -1,3 +1,5 @@
+mod config;
+mod init;
 use clap::{CommandFactory, Parser, Subcommand};
 
 #[derive(Parser)]
@@ -13,18 +15,19 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
-    /// Prints a Hello message
-    Hello,
+    /// Initializes DC (creates the templates directories)
+    Init,
 }
 
-fn main() {
+fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
     match cli.command {
-        Some(Command::Hello) => println!("Hello from 'dc'!"),
+        Some(Command::Init) => init::run(),
         None => {
             let mut cmd = Cli::command();
             let _ = cmd.print_help();
             println!();
+            Ok(())
         }
     }
 }
