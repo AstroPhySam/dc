@@ -27,6 +27,12 @@ enum Command {
 enum LocalCommand {
     /// List local templates
     List,
+    /// Show details of a local template (single-select)
+    Info {
+        /// Template to show (hidden, for testing — bypasses interactive prompt)
+        #[arg(long, hide = true)]
+        template: Option<String>,
+    },
 }
 
 fn main() -> anyhow::Result<()> {
@@ -34,6 +40,7 @@ fn main() -> anyhow::Result<()> {
     match cli.command {
         Some(Command::Init) => init::run(),
         Some(Command::Local(LocalCommand::List)) => templates::run_list(),
+        Some(Command::Local(LocalCommand::Info { template })) => templates::run_info_with(template),
         None => {
             let mut cmd = Cli::command();
             let _ = cmd.print_help();

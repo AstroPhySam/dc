@@ -34,11 +34,36 @@ pub fn dc_local_list(base: &Path) -> Command {
     cmd
 }
 
+/// `dc local info` command, optionally bypassing prompt with `--template <name>`.
+pub fn dc_local_info(base: &Path, template: Option<&str>) -> Command {
+    let mut cmd = dc(base);
+    cmd.args(["local", "info"]);
+    if let Some(t) = template {
+        cmd.args(["--template", t]);
+    }
+    cmd
+}
+
 /// Create a template at `local/<rel>/Dockerfile`.
 pub fn write_template(local: &Path, rel: &str) {
     let dir = local.join(rel);
     fs::create_dir_all(&dir).expect("create template dir");
     fs::write(dir.join("Dockerfile"), "FROM alpine\n").expect("write Dockerfile");
+}
+
+/// Create a template with custom Dockerfile and optional details.txt.
+pub fn write_template_with_details(
+    local: &Path,
+    rel: &str,
+    dockerfile: &str,
+    details: Option<&str>,
+) {
+    let dir = local.join(rel);
+    fs::create_dir_all(&dir).expect("create template dir");
+    fs::write(dir.join("Dockerfile"), dockerfile).expect("write Dockerfile");
+    if let Some(d) = details {
+        fs::write(dir.join("details.txt"), d).expect("write details.txt");
+    }
 }
 
 /// Extract stdout as String from an `assert_cmd` Assert.
