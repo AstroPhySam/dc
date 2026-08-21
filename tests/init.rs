@@ -1,30 +1,18 @@
-use assert_cmd::Command;
+mod common;
+use common::{dc_init, get_stdout, temp_dc};
 use predicates::prelude::*;
 use std::fs;
-use std::path::Path;
-use tempfile::tempdir;
-
-fn dc_in(base: &Path) -> Command {
-    let mut cmd = Command::cargo_bin("dc").unwrap();
-    cmd.env("DC_HOME", base).arg("init");
-    cmd
-}
-
-fn stdout(assert: &assert_cmd::assert::Assert) -> String {
-    String::from_utf8_lossy(&assert.get_output().stdout).into_owned()
-}
 
 #[test]
 fn init_creates_all_directories() {
-    let tmp = tempdir().unwrap();
-    let base = tmp.path().join("dc_home");
+    let (_tmp, base) = temp_dc();
 
-    let assert = dc_in(&base)
+    let assert = dc_init(&base)
         .assert()
         .success()
         .stdout(predicate::str::contains("Initializing DC"));
 
-    let out = stdout(&assert);
+    let out = get_stdout(&assert);
     assert_eq!(out.matches("# created").count(), 4);
     assert_eq!(out.matches("# already exists").count(), 0);
 
@@ -35,17 +23,16 @@ fn init_creates_all_directories() {
 
 #[test]
 fn init_is_idempotent() {
-    let tmp = tempdir().unwrap();
-    let base = tmp.path().join("dc_home");
+    let (_tmp, base) = temp_dc();
 
-    dc_in(&base).assert().success();
+    dc_init(&base).assert().success();
 
-    let assert = dc_in(&base)
+    let assert = dc_init(&base)
         .assert()
         .success()
         .stdout(predicate::str::contains("Initializing DC"));
 
-    let out = stdout(&assert);
+    let out = get_stdout(&assert);
     assert_eq!(out.matches("# already exists").count(), 4);
     assert_eq!(out.matches("# created").count(), 0);
 
@@ -55,15 +42,14 @@ fn init_is_idempotent() {
 
 #[test]
 fn init_preserves_existing_templates() {
-    let tmp = tempdir().unwrap();
-    let base = tmp.path().join("dc_home");
+    let (_tmp, base) = temp_dc();
     let local = base.join("templates/local");
 
     fs::create_dir_all(&local).unwrap();
     fs::write(local.join("Dockerfile"), "FROM alpine\n").unwrap();
 
-    let assert = dc_in(&base).assert().success();
-    let out = stdout(&assert);
+    let assert = dc_init(&base).assert().success();
+    let out = get_stdout(&assert);
     let local_line = out.lines().find(|l| l.contains("local/")).unwrap();
 
     assert!(
@@ -77,13 +63,12 @@ fn init_preserves_existing_templates() {
 
 #[test]
 fn init_mixed_state() {
-    let tmp = tempdir().unwrap();
-    let base = tmp.path().join("dc_home");
+    let (_tmp, base) = temp_dc();
 
     fs::create_dir_all(&base).unwrap();
 
-    let assert = dc_in(&base).assert().success();
-    let out = stdout(&assert);
+    let assert = dc_init(&base).assert().success();
+    let out = get_stdout(&assert);
 
     let base_line = out.lines().find(|l| l.contains("~/.dc")).unwrap();
     assert!(base_line.contains("# already exists"));

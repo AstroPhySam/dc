@@ -1,43 +1,22 @@
-use assert_cmd::Command;
+mod common;
+use common::{dc_local_list, get_stdout, temp_dc, write_template};
 use predicates::prelude::*;
 use std::fs;
-use std::path::Path;
-use tempfile::tempdir;
-
-fn dc_in(base: &Path, args: &[&str]) -> Command {
-    let mut cmd = Command::cargo_bin("dc").unwrap();
-    cmd.env("DC_HOME", base);
-    for a in args {
-        cmd.arg(a);
-    }
-    cmd
-}
-
-fn write_template(local: &Path, rel: &str) {
-    let dir = local.join(rel);
-    fs::create_dir_all(&dir).unwrap();
-    fs::write(dir.join("Dockerfile"), "FROM alpine\n").unwrap();
-}
-
-fn stdout(assert: &assert_cmd::assert::Assert) -> String {
-    String::from_utf8_lossy(&assert.get_output().stdout).into_owned()
-}
 
 #[test]
 fn lists_nested_templates_sorted() {
-    let tmp = tempdir().unwrap();
-    let base = tmp.path().join("dc_home");
+    let (_tmp, base) = temp_dc();
     let local = base.join("templates").join("local");
     write_template(&local, "rust");
     write_template(&local, "bash");
     write_template(&local, "python/basic");
 
-    let assert = dc_in(&base, &["local", "list"])
+    let assert = dc_local_list(&base)
         .assert()
         .success()
         .stdout(predicate::str::contains("Available local templates"));
 
-    let out = stdout(&assert);
+    let out = get_stdout(&assert);
     assert!(out.contains("bash"), "missing bash in {out}");
     assert!(out.contains("rust"), "missing rust in {out}");
     assert!(
@@ -61,15 +40,14 @@ fn lists_nested_templates_sorted() {
 
 #[test]
 fn ignores_dirs_without_dockerfile() {
-    let tmp = tempdir().unwrap();
-    let base = tmp.path().join("dc_home");
+    let (_tmp, base) = temp_dc();
     let local = base.join("templates").join("local");
     fs::create_dir_all(local.join("empty")).unwrap();
     fs::write(local.join("empty").join("README.md"), "hi\n").unwrap();
     write_template(&local, "has");
 
-    let assert = dc_in(&base, &["local", "list"]).assert().success();
-    let out = stdout(&assert);
+    let assert = dc_local_list(&base).assert().success();
+    let out = get_stdout(&assert);
     assert!(out.contains("has"), "{out}");
     assert!(
         !out.contains("empty"),
@@ -79,12 +57,11 @@ fn ignores_dirs_without_dockerfile() {
 
 #[test]
 fn empty_local_prints_message() {
-    let tmp = tempdir().unwrap();
-    let base = tmp.path().join("dc_home");
+    let (_tmp, base) = temp_dc();
     fs::create_dir_all(base.join("templates").join("local")).unwrap();
 
-    let assert = dc_in(&base, &["local", "list"]).assert().success();
-    let out = stdout(&assert);
+    let assert = dc_local_list(&base).assert().success();
+    let out = get_stdout(&assert);
     assert!(
         out.to_lowercase().contains("no templates found"),
         "expected empty message, got: {out}"
@@ -93,11 +70,10 @@ fn empty_local_prints_message() {
 
 #[test]
 fn missing_local_hints_init() {
-    let tmp = tempdir().unwrap();
-    let base = tmp.path().join("dc_home"); // never created
+    let (_tmp, base) = temp_dc(); // never created
 
-    let assert = dc_in(&base, &["local", "list"]).assert().success();
-    let out = stdout(&assert);
+    let assert = dc_local_list(&base).assert().success();
+    let out = get_stdout(&assert);
     assert!(
         out.to_lowercase().contains("dc init"),
         "expected hint to run dc init, got: {out}"
