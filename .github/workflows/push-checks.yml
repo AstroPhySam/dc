@@ -16,3 +16,5 @@ jobs:
 
       - name: Run Modular Rust Checks
         uses: ./.github/actions/rust-checks
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
