@@ -1,0 +1,31 @@
+# Using 'prek' as default hook manager
+repos:
+  - repo: builtin
+    hooks:
+      - id: check-yaml
+      - id: check-toml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+
+  - repo: local
+    hooks:
+      - id: cargo-fmt
+        name: rustfmt check
+        language: system
+        entry: cargo fmt --check
+        files: \.rs$
+        pass_filenames: false
+
+      - id: cargo-clippy
+        name: clippy lints
+        language: system
+        entry: cargo clippy --all-targets -- -D warnings
+        files: \.rs$
+        pass_filenames: false
+
+      - id: cargo-test
+        name: cargo tests
+        language: system
+        entry: cargo test
+        files: \.rs$
+        pass_filenames: false

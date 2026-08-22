@@ -1,0 +1,18 @@
+name: Push Validation
+
+on:
+  push:
+    branches: [main]
+
+    # Don't duplicate when a release tag is pushed
+    tags-ignore: ["v*"]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Run Modular Rust Checks
+        uses: ./.github/actions/rust-checks

@@ -1,0 +1,28 @@
+name: Rust Environment Quality Checks
+description: Consolidates formatting, clippy lints, audit dependencies and test checks into a modular action
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Rust Toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: clippy, rustfmt
+
+    - name: Cache Build Dependencies
+      uses: Swatinem/rust-cache@v2
+
+    - name: Verify Formatting
+      shell: bash
+      run: cargo fmt --check
+
+    - name: Evaluate Linter (Clippy)
+      shell: bash
+      run: cargo clippy --all-targets -- -D warnings
+
+    - name: Audit Dependencies
+      uses: rustsec/audit-check@v2
+
+    - name: Run Test Suites
+      shell: bash
+      run: cargo test --all-features
