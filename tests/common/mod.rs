@@ -79,6 +79,25 @@ pub fn write_template_with_details(
     }
 }
 
+/// `dc local launch` command, optionally bypassing prompt with `--template <name>`.
+pub fn dc_local_launch(base: &Path, template: Option<&str>) -> Command {
+    let mut cmd = dc(base);
+    cmd.args(["local", "launch"]);
+    if let Some(t) = template {
+        cmd.args(["--template", t]);
+    }
+    cmd
+}
+
+#[cfg(feature = "docker")]
+pub fn has_docker() -> bool {
+    std::process::Command::new("docker")
+        .arg("--version")
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false)
+}
+
 /// Extract stdout as String from an `assert_cmd` Assert.
 pub fn get_stdout(assert: &assert_cmd::assert::Assert) -> String {
     String::from_utf8_lossy(&assert.get_output().stdout).into_owned()

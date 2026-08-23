@@ -1,5 +1,6 @@
 mod config;
 mod init;
+mod launch;
 mod templates;
 use clap::{CommandFactory, Parser, Subcommand};
 
@@ -42,6 +43,12 @@ enum LocalCommand {
         #[arg(long, hide = true, default_value_t = false)]
         yes: bool,
     },
+    /// Launch a local template
+    Launch {
+        /// Template to launch (hidden, for testing — bypasses interactive prompt)
+        #[arg(long, hide = true)]
+        template: Option<String>,
+    },
 }
 
 fn main() -> anyhow::Result<()> {
@@ -52,6 +59,9 @@ fn main() -> anyhow::Result<()> {
         Some(Command::Local(LocalCommand::Info { template })) => templates::run_info_with(template),
         Some(Command::Local(LocalCommand::Delete { template, yes })) => {
             templates::run_delete_with(template, yes)
+        }
+        Some(Command::Local(LocalCommand::Launch { template })) => {
+            launch::run_local_launch(template)
         }
         None => {
             let mut cmd = Cli::command();
