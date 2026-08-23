@@ -33,6 +33,15 @@ enum LocalCommand {
         #[arg(long, hide = true)]
         template: Option<String>,
     },
+    /// Delete local templates (multiselect)
+    Delete {
+        /// Templates to delete (hidden, for testing — bypasses interactive prompt)
+        #[arg(long, hide = true)]
+        template: Vec<String>,
+        /// Skip confirmation (hidden, for testing)
+        #[arg(long, hide = true, default_value_t = false)]
+        yes: bool,
+    },
 }
 
 fn main() -> anyhow::Result<()> {
@@ -41,6 +50,9 @@ fn main() -> anyhow::Result<()> {
         Some(Command::Init) => init::run(),
         Some(Command::Local(LocalCommand::List)) => templates::run_list(),
         Some(Command::Local(LocalCommand::Info { template })) => templates::run_info_with(template),
+        Some(Command::Local(LocalCommand::Delete { template, yes })) => {
+            templates::run_delete_with(template, yes)
+        }
         None => {
             let mut cmd = Cli::command();
             let _ = cmd.print_help();

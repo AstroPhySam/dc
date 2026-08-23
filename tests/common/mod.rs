@@ -44,6 +44,19 @@ pub fn dc_local_info(base: &Path, template: Option<&str>) -> Command {
     cmd
 }
 
+/// `dc local delete` command, optionally bypassing prompts.
+pub fn dc_local_delete(base: &Path, templates: &[&str], yes: bool) -> Command {
+    let mut cmd = dc(base);
+    cmd.args(["local", "delete"]);
+    for t in templates {
+        cmd.args(["--template", t]);
+    }
+    if yes {
+        cmd.arg("--yes");
+    }
+    cmd
+}
+
 /// Create a template at `local/<rel>/Dockerfile`.
 pub fn write_template(local: &Path, rel: &str) {
     let dir = local.join(rel);
